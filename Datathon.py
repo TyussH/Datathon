@@ -30,7 +30,7 @@ def process_images(folder_path):
     return data
 
 # Folder containing images (update the path accordingly)
-folder_path = '/path/to/faceimages'  # Replace '/path/to/faceimages' with the actual path
+folder_path = '/home/user/Downloads/faceimages'  # Replace '/path/to/faceimages' with the actual path
 
 # Process images and get the data
 image_data = process_images(folder_path)
