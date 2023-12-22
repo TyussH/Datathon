@@ -1,47 +1,49 @@
 import os
-import pandas as pd
 from deepface import DeepFace
+import csv
 
-def analyze_images(folder_path, output_csv_path):
-    image_files = [file for file in os.listdir(folder_path) if file.endswith('.jpg') or file.endswith('.png')]
-
-    results_df = pd.DataFrame(columns=["#", "filename", "age", "gender", "race"])
-    image_count = 0  # Counter for the number of images
-
-    for image_file in image_files:
-        image_path = os.path.join(folder_path, image_file)
-        image_count += 1  # Increment the counter
-
+# Function to process images and extract gender, race, and age
+def process_images(folder_path):
+    data = []
+    
+    # Loop through each file in the folder
+    for filename in os.listdir(folder_path):
+        file_path = os.path.join(folder_path, filename)
+        
+        # Use DeepFace to analyze the image
         try:
-            results = DeepFace.analyze(image_path, actions=['age', 'gender', 'race'], enforce_detection=False)
+            result = DeepFace.analyze(file_path)
+            
+            # Extract gender, race, and age
+            gender = result['gender']
+            race = result['race']
+            age = result['age']
+        except:
+            # If an error occurs or data is not available, use filler values
+            gender = "unknown"
+            race = "unknown"
+            age = -1
+        
+        # Append the data to the list
+        data.append([filename, gender, race, age])
+    
+    return data
 
-            # Check if results is empty (no face detected)
-            if not results:
-                row = pd.DataFrame([{
-                    "#": image_count,
-                    "filename": image_file,
-                    "age": -1,
-                    "gender": "unknown",
-                    "race": "unknown"
-                }])
-                results_df = pd.concat([results_df, row], ignore_index=True)
-            else:
-                for face_result in results:
-                    row = pd.DataFrame([{
-                        "#": image_count,
-                        "filename": image_file,
-                        "age": face_result['age'],
-                        "gender": face_result['dominant_gender'],
-                        "race": face_result['dominant_race']
-                    }])
-                    results_df = pd.concat([results_df, row], ignore_index=True)
+# Folder containing images (update the path accordingly)
+folder_path = '/path/to/faceimages'  # Replace '/path/to/faceimages' with the actual path
 
-        except Exception as e:
-            print(f"Error processing {image_file}: {e}")
+# Process images and get the data
+image_data = process_images(folder_path)
 
-    results_df.to_csv(output_csv_path, index=False)
-    print(f"Results saved to {output_csv_path}")
+# Write the data to a CSV file
+output_csv = 'output.csv'
+with open(output_csv, 'w', newline='') as csvfile:
+    csv_writer = csv.writer(csvfile)
+    
+    # Write the header row
+    csv_writer.writerow(['Filename', 'Gender', 'Race/ethnicity', 'Age'])
+    
+    # Write the image data rows
+    csv_writer.writerows(image_data)
 
-folder_path = 'file:///home/user/Downloads/faceimages'
-output_csv_path = '/home/users/Documents/face_analysis_results.csv'
-analyze_images(folder_path, output_csv_path)
+print(f"CSV file '{output_csv}' has been created with image data.")
